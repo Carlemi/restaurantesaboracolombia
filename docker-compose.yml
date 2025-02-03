@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - static:/app/static
+      - media:/app/media
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_DEBUG=${DJANGO_DEBUG}
+      - DJANGO_STRIPE_PUBLISHABLE_KEY=${DJANGO_STRIPE_PUBLISHABLE_KEY}
+      - DJANGO_STRIPE_SECRET_KEY=${DJANGO_STRIPE_SECRET_KEY}
+      - DJANGO_STRIPE_API_VERSION=${DJANGO_STRIPE_API_VERSION}
+      - DJANGO_STRIPE_WEBHOOK_SECRET=${DJANGO_STRIPE_WEBHOOK_SECRET}
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_BROKER_USE_SSL=False
+    env_file:
+      - .env
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  stripe-webhook:
+    image: stripe/stripe-cli:latest
+    command: listen --api-key=${DJANGO_STRIPE_SECRET_KEY} --forward-to=http://web:8000/stripe-webhook/
+    environment:
+      - STRIPE_API_KEY=${DJANGO_STRIPE_SECRET_KEY}
+    ports:
+      - "8001:8001"
+    volumes:
+      - stripe-webhook:/var/lib/stripe-cli
+
+volumes:
+  static:
+  media:
+  stripe-webhook:
