@@ -5,10 +5,8 @@ from .forms import OrderCreateForm
 from cart.cart import Cart
 from .tasks import order_created
 
-<<<<<<< HEAD
-=======
 
->>>>>>> recuperacion
+
 def order_create(request):
   cart = Cart(request)
   if request.method == 'POST':
