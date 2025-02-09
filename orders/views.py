@@ -1,20 +1,10 @@
 from django.urls import reverse
 from django.shortcuts import render, redirect
-from .models import OrderItem, Order
+from .models import OrderItem
 from .forms import OrderCreateForm
 from cart.cart import Cart
 from .tasks import order_created
-from django.core.management import call_command
-from django.db import transaction
 
-
-@transaction.atomic
-def reiniciar_indices():
-    # Eliminar todos los registros usando Django ORM
-    Order.objects.all().delete()
-    
-    # Llamar a flush para reiniciar los índices
-    call_command('flush', interactive=False)
 
 def order_create(request):
   cart = Cart(request)
