@@ -6,10 +6,10 @@ app = Celery('myshop')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Usar variable de entorno con IP
-BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'amqp://guest:guest@localhost')
+BROKER_URL = os.environ.get('DJANGO_CELERY_BROKER_URL', 'amqp://guest:guest@rabbitmq:5672//')
 app.conf.update(
     task_always_eager=False,
-    broker_url='amqp://guest:guest@localhost',
+    broker_url=BROKER_URL,
     result_backend='rpc://',
     worker_pool='eventlet',
 )

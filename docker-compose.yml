@@ -11,6 +11,51 @@ services:
       db:
         condition: service_healthy
     restart: always
+    env_file:
+      - .env
+    environment:
+      - SECRET_KEY
+      - DEBUG
+      - STRIPE_PUBLISHABLE_KEY
+      - STRIPE_SECRET_KEY
+      - STRIPE_API_VERSION
+      - STRIPE_WEBHOOK_SECRET
+      - CELERY_BROKER_URL
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    
+  celery-worker:
+    build: .
+    command: celery -A myshop worker --loglevel=info -P solo
+    volumes:
+      - .:/code
+    env_file:
+      - .env
+    environment:
+      - SECRET_KEY
+      - DEBUG
+      - STRIPE_PUBLISHABLE_KEY
+      - STRIPE_SECRET_KEY
+      - STRIPE_API_VERSION
+      - STRIPE_WEBHOOK_SECRET
+      - CELERY_BROKER_URL
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: always
   db:
     image: postgres:16
     volumes:
