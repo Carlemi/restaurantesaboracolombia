@@ -1,47 +1,32 @@
 version: "3.9"
-
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
-      - static:/app/static
-      - media:/app/media
-    environment:
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - DJANGO_STRIPE_PUBLISHABLE_KEY=${DJANGO_STRIPE_PUBLISHABLE_KEY}
-      - DJANGO_STRIPE_SECRET_KEY=${DJANGO_STRIPE_SECRET_KEY}
-      - DJANGO_STRIPE_API_VERSION=${DJANGO_STRIPE_API_VERSION}
-      - DJANGO_STRIPE_WEBHOOK_SECRET=${DJANGO_STRIPE_WEBHOOK_SECRET}
-      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
-      - CELERY_BROKER_USE_SSL=False
-    env_file:
-      - .env
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-
-  stripe-webhook:
-    image: stripe/stripe-cli:latest
-    command: listen --api-key=${DJANGO_STRIPE_SECRET_KEY} --forward-to=http://web:8000/stripe-webhook/
-    environment:
-      - STRIPE_API_KEY=${DJANGO_STRIPE_SECRET_KEY}
-    ports:
-      - "8001:8001"
+      - .:/code
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+  db:
+    image: postgres:16
     volumes:
-      - stripe-webhook:/var/lib/stripe-cli
+      - pg_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=saboracolo_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  static:
-  media:
-  stripe-webhook:
+  pg_data:
